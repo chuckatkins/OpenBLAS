@@ -748,18 +748,18 @@ set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${CCOMMON_OPT}")
 endif()
 # TODO: not sure what PFLAGS is -hpa
 set(PFLAGS "${PFLAGS} ${CCOMMON_OPT} -I${TOPDIR} -DPROFILE ${COMMON_PROF}")
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
 
-  if ("${F_COMPILER}" STREQUAL "FLANG")
-    if (${CMAKE_Fortran_COMPILER_VERSION} VERSION_LESS_EQUAL 3)
-      set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -fno-unroll-loops")
-    endif ()
-  endif ()
-    if (ARM64 AND CMAKE_Fortran_COMPILER_ID MATCHES "LLVMFlang.*" AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
-      set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O2")
-    endif ()
-endif ()
+# Work around an optimizer bug in classic AOCC Flang <= 3
+if(CMAKE_Fortran_COMPILER_ID STREQUAL "Flang" AND
+   CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 4)
+  string(APPEND CMAKE_Fortran_FLAGS_RELEASE " -fno-unroll-loops")
+endif()
 
+# Supply the optimization level omitted by some CMake platform modules
+if(CMAKE_Fortran_COMPILER_ID STREQUAL "LLVMFlang" AND
+   NOT CMAKE_Fortran_FLAGS_RELEASE)
+  set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
+endif()
 
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${FCOMMON_OPT}")
 # TODO: not sure what FPFLAGS is -hpa
