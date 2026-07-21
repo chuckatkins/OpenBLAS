@@ -18,6 +18,14 @@ ifeq ($(USE_OPENMP),1)
 	FOMP_OPT:= -fopenmp
 endif
 
+PKG_SYMBOL_CFLAGS :=
+ifneq ($(strip $(SYMBOLPREFIX)),)
+	PKG_SYMBOL_CFLAGS += -DBLAS_SYMBOL_PREFIX=$(SYMBOLPREFIX)
+endif
+ifneq ($(strip $(SYMBOLSUFFIX)),)
+	PKG_SYMBOL_CFLAGS += -DBLAS_SYMBOL_SUFFIX=$(SYMBOLSUFFIX)
+endif
+
 PREFIX ?= /opt/OpenBLAS
 
 OPENBLAS_INCLUDE_DIR := $(PREFIX)/include
@@ -199,12 +207,14 @@ ifeq ($(INTERFACE64),1)
 	SUFFIX64=64
 endif
 	@echo Generating $(LIBSONAMEBASE)$(SUFFIX64).pc in "$(DESTDIR)$(OPENBLAS_PKGCONFIG_DIR)"
-	@echo 'libdir='$(OPENBLAS_LIBRARY_DIR) > "$(PKGFILE)"
+	@echo 'prefix=$${pcfiledir}/../..' > "$(PKGFILE)"
+	@echo 'libdir=$${prefix}/lib' >> "$(PKGFILE)"
 	@echo 'libprefix='$(LIBNAMEPREFIX) >> "$(PKGFILE)"
 	@echo 'libnamesuffix='$(LIBNAMESUFFIX) >> "$(PKGFILE)"
 	@echo 'libsuffix='$(SYMBOLSUFFIX) >> "$(PKGFILE)"
-	@echo 'includedir='$(OPENBLAS_INCLUDE_DIR) >> "$(PKGFILE)"
+	@echo 'includedir=$${prefix}/include' >> "$(PKGFILE)"
 	@echo 'omp_opt='$(FOMP_OPT) >> "$(PKGFILE)"
+	@echo 'symbol_cflags='$(PKG_SYMBOL_CFLAGS) >> "$(PKGFILE)"
 	@echo 'openblas_config= USE_64BITINT='$(INTERFACE64) 'DYNAMIC_ARCH='$(DYNAMIC_ARCH) 'DYNAMIC_OLDER='$(DYNAMIC_OLDER) 'NO_CBLAS='$(NO_CBLAS) 'NO_LAPACK='$(NO_LAPACK) 'NO_LAPACKE='$(NO_LAPACKE) 'NO_AFFINITY='$(NO_AFFINITY) 'USE_OPENMP='$(USE_OPENMP) $(TARGET) 'MAX_THREADS='$(NUM_THREADS)>> "$(PKGFILE)"
 	@echo 'version='$(VERSION) >> "$(PKGFILE)"
 	@echo 'extralib='$(PKG_EXTRALIB) >> "$(PKGFILE)"
