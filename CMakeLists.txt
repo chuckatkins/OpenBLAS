@@ -27,7 +27,7 @@ option(BUILD_LAPACK_DEPRECATED "When building LAPACK, include also some older, d
 
 set(LAPACK_STRLEN "" CACHE STRING "When building LAPACK, use this type (e.g. \"int\") for character lengths (defaults to size_t)")
 
-option(BUILD_TESTING "Build LAPACK testsuite when building LAPACK" ON)
+option(BUILD_TESTING "Build testsuites for LAPACK, CBLAS, and OpenBLAS" ON)
 
 option(BUILD_BENCHMARKS "Build the collection of BLAS/LAPACK benchmarks" OFF)
 
@@ -428,8 +428,6 @@ foreach (OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
   set_target_properties( ${OpenBLAS_LIBS} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_BINARY_DIR}/lib/${OUTPUTCONFIG} )
 endforeach()
 
-enable_testing()
-
 if (USE_THREAD)
   # Add threading library to linker
   find_package(Threads)
@@ -448,30 +446,28 @@ if (USE_THREAD)
 endif()
 
 #if (MSVC OR NOT NOFORTRAN)
-if (NOT NO_CBLAS)
-  if (NOT ONLY_CBLAS)
-  # Broken without fortran on unix
-    add_subdirectory(utest)
-endif()
-endif()
+if (BUILD_TESTING)
+  enable_testing()
 
-if (NOT NOFORTRAN)
- if (NOT ONLY_CBLAS)
-  # Build test and ctest
-  add_subdirectory(test)
- endif()
- if (BUILD_TESTING AND NOT BUILD_WITHOUT_LAPACK)
-    add_subdirectory(lapack-netlib/TESTING)
-  endif()
-endif()
-  if(NOT NO_CBLAS)
-   if (NOT ONLY_CBLAS)
+  if (NOT NO_CBLAS AND NOT ONLY_CBLAS)
     add_subdirectory(ctest)
-   endif()
+
+    # Broken without fortran on unix
+    add_subdirectory(utest)
+  endif()
+  if (NOT NOFORTRAN)
+    if (NOT ONLY_CBLAS)
+      # Build test and ctest
+      add_subdirectory(test)
+    endif()
+    if (NOT BUILD_WITHOUT_LAPACK)
+      add_subdirectory(lapack-netlib/TESTING)
+    endif()
   endif()
   if (CPP_THREAD_SAFETY_TEST OR CPP_THREAD_SAFETY_GEMV)
     add_subdirectory(cpp_thread_test)
   endif()
+endif()
 
 if (NOT FIXED_LIBNAME)
 set_target_properties(${OpenBLAS_LIBS} PROPERTIES
