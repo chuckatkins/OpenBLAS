@@ -280,10 +280,7 @@ endif()
 if(NOT NO_LAPACK)
   add_library(LAPACK_OVERRIDES OBJECT ${LA_SOURCES})
   if (USE_OPENMP AND (NOT NOFORTRAN))
-    # Disable OpenMP for LAPACK Fortran codes on Windows.
-    if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-      target_link_libraries(LAPACK_OVERRIDES OpenMP::OpenMP_Fortran)
-    endif()
+    target_link_libraries(LAPACK_OVERRIDES OpenMP::OpenMP_Fortran)
   endif()
   list(APPEND TARGET_OBJS "$<TARGET_OBJECTS:LAPACK_OVERRIDES>")
 endif()
@@ -590,10 +587,17 @@ set (PDBOPT "")
 endif()
  #if (USE_PERL)
 message(STATUS "adding postbuild instruction to rename syms")
+  set(omp_libs)
+  if(USE_OPENMP)
+    list(APPEND omp_libs ${OpenMP_C_LIBRARIES})
+    if(NOT NOFORTRAN)
+      list(APPEND omp_libs ${OpenMP_Fortran_LIBRARIES})
+    endif()
+  endif()
   add_custom_command(TARGET ${OpenBLAS_LIBNAME}_static POST_BUILD
 	COMMAND perl ${PROJECT_SOURCE_DIR}/exports/gensymbol.pl "win2k" "${ARCH}" "${BU}" "${EXPRECISION_IN}" "${NO_CBLAS_IN}" "${NO_LAPACK_IN}" "${NO_LAPACKE_IN}" "${NEED2UNDERSCORES_IN}" "${ONLY_CBLAS_IN}" "${SYMBOLPREFIX}" "${SYMBOLSUFFIX}" "${BLD}" "${BBF16}" "${BHF16}" "${BS}" "${BD}" "${BC}" "${BZ}" > ${PROJECT_BINARY_DIR}/renamesyms.def
 	COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -I${PROJECT_SOURCE_DIR} -I${PROJECT_BINARY_DIR} -c -o ${PROJECT_BINARY_DIR}/dllinit.o ${PROJECT_SOURCE_DIR}/exports/dllinit.c
-	COMMAND lld-link -nodefaultlib:libcmt -defaultlib:${CRTLIB} ${CMAKE_LINKER_FLAGS} -errorlimit:0 -def:${PROJECT_BINARY_DIR}/renamesyms.def ${PROJECT_BINARY_DIR}/dllinit.o $<TARGET_FILE:${OpenBLAS_LIBNAME}_static> -wholearchive:$<TARGET_FILE:${OpenBLAS_LIBNAME}_static> -dll -out:$<TARGET_FILE_DIR:${OpenBLAS_LIBNAME}_static>/${OpenBLAS_LIBNAME}.dll -implib:$<TARGET_FILE_DIR:${OpenBLAS_LIBNAME}_static>/${OpenBLAS_LIBNAME}.dll.a ${PDBOPT} 
+	COMMAND lld-link -nodefaultlib:libcmt -defaultlib:${CRTLIB} ${CMAKE_LINKER_FLAGS} -errorlimit:0 -def:${PROJECT_BINARY_DIR}/renamesyms.def ${PROJECT_BINARY_DIR}/dllinit.o $<TARGET_FILE:${OpenBLAS_LIBNAME}_static> -wholearchive:$<TARGET_FILE:${OpenBLAS_LIBNAME}_static> -dll -out:$<TARGET_FILE_DIR:${OpenBLAS_LIBNAME}_static>/${OpenBLAS_LIBNAME}.dll -implib:$<TARGET_FILE_DIR:${OpenBLAS_LIBNAME}_static>/${OpenBLAS_LIBNAME}.dll.a ${PDBOPT} ${omp_libs}
 	#COMMAND lld-link -nodefaultlib:libcmt -defaultlib:msvcrt ${CMAKE_LINKER_FLAGS} -errorlimit:0 -def:${PROJECT_BINARY_DIR}/renamesyms.def ${PROJECT_BINARY_DIR}/dllinit.o $<TARGET_FILE:${OpenBLAS_LIBNAME}_static> -wholearchive:$<TARGET_FILE:${OpenBLAS_LIBNAME}_static> -dll -out:$<TARGET_FILE_DIR:${OpenBLAS_LIBNAME}_static>/${OpenBLAS_LIBNAME}.dll -implib:$<TARGET_FILE_DIR:${OpenBLAS_LIBNAME}_static>/${OpenBLAS_LIBNAME}.dll.a
 	 ${REMOVE_STATIC_LIB} VERBATIM
   )
